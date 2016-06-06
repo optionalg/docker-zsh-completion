@@ -1,4 +1,4 @@
-#compdef docker=_docker dockerd=__docker_daemon_subcommand
+#compdef docker dockerd
 #
 # zsh completion for docker (http://docker.com)
 #
@@ -452,7 +452,7 @@ __docker_volume_subcommand() {
 }
 
 
-__docker_daemon_subcommand() {
+_dockerd() {
     local -a opts_help store
     integer ret=1
     opts_help=("(: -)--help[Print usage]")
@@ -716,7 +716,7 @@ __docker_subcommand() {
 
             ;;
         (daemon)
-            __docker_daemon_subcommand && ret=0
+            _dockerd && ret=0
             ;;
         (diff)
             _arguments $(__docker_arguments) \
@@ -1087,6 +1087,8 @@ _docker() {
 
     return ret
 }
+
+_docker "$@"
 
 # Local Variables:
 # mode: Shell-Script

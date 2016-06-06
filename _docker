@@ -1,4 +1,4 @@
-#compdef docker
+#compdef docker=_docker dockerd=__docker_daemon_subcommand
 #
 # zsh completion for docker (http://docker.com)
 #
@@ -451,6 +451,93 @@ __docker_volume_subcommand() {
     return ret
 }
 
+
+__docker_daemon_subcommand() {
+    local -a opts_help store
+    integer ret=1
+    opts_help=("(: -)--help[Print usage]")
+
+    _arguments $(__docker_arguments) \
+               $opts_help \
+               "($help)--api-cors-header=[CORS headers in the remote API]:CORS headers: " \
+               "($help)*--authorization-plugin=[Authorization plugins to load]" \
+               "($help -b --bridge)"{-b=,--bridge=}"[Attach containers to a network bridge]:bridge:_net_interfaces" \
+               "($help)--bip=[Network bridge IP]:IP address: " \
+               "($help)--cgroup-parent=[Parent cgroup for all containers]:cgroup: " \
+               "($help -D --debug)"{-D,--debug}"[Enable debug mode]" \
+               "($help)--default-gateway[Container default gateway IPv4 address]:IPv4 address: " \
+               "($help)--default-gateway-v6[Container default gateway IPv6 address]:IPv6 address: " \
+               "($help)--cluster-store=[URL of the distributed storage backend]:Cluster Store:->cluster-store" \
+               "($help)--cluster-advertise=[Address of the daemon instance to advertise]:Instance to advertise (host\:port): " \
+               "($help)*--cluster-store-opt=[Cluster options]:Cluster options:->cluster-store-options" \
+               "($help)*--dns=[DNS server to use]:DNS: " \
+               "($help)*--dns-search=[DNS search domains to use]:DNS search: " \
+               "($help)*--dns-opt=[DNS options to use]:DNS option: " \
+               "($help)*--default-ulimit=[Default ulimit settings for containers]:ulimit: " \
+               "($help)--disable-legacy-registry[Do not contact legacy registries]" \
+               "($help)*--exec-opt=[Exec driver options]:exec driver options: " \
+               "($help)--exec-root=[Root of the Docker execdriver]:path:_directories" \
+               "($help)--fixed-cidr=[IPv4 subnet for fixed IPs]:IPv4 subnet: " \
+               "($help)--fixed-cidr-v6=[IPv6 subnet for fixed IPs]:IPv6 subnet: " \
+               "($help -G --group)"{-G=,--group=}"[Group for the unix socket]:group:_groups" \
+               "($help -g --graph)"{-g=,--graph=}"[Root of the Docker runtime]:path:_directories" \
+               "($help -H --host)"{-H=,--host=}"[tcp://host:port to bind/connect to]:host: " \
+               "($help)--icc[Enable inter-container communication]" \
+               "($help)*--insecure-registry=[Enable insecure registry communication]:registry: " \
+               "($help)--ip=[Default IP when binding container ports]" \
+               "($help)--ip-forward[Enable net.ipv4.ip_forward]" \
+               "($help)--ip-masq[Enable IP masquerading]" \
+               "($help)--iptables[Enable addition of iptables rules]" \
+               "($help)--ipv6[Enable IPv6 networking]" \
+               "($help -l --log-level)"{-l=,--log-level=}"[Logging level]:level:(debug info warn error fatal)" \
+               "($help)*--label=[Key=value labels]:label: " \
+               "($help)--log-driver=[Default driver for container logs]:Logging driver:(json-file syslog journald gelf fluentd awslogs splunk none)" \
+               "($help)*--log-opt=[Log driver specific options]:log driver options:__docker_log_options" \
+               "($help)--mtu=[Network MTU]:mtu:(0 576 1420 1500 9000)" \
+               "($help -p --pidfile)"{-p=,--pidfile=}"[Path to use for daemon PID file]:PID file:_files" \
+               "($help)--raw-logs[Full timestamps without ANSI coloring]" \
+               "($help)*--registry-mirror=[Preferred Docker registry mirror]:registry mirror: " \
+               "($help -s --storage-driver)"{-s=,--storage-driver=}"[Storage driver to use]:driver:(aufs devicemapper btrfs zfs overlay)" \
+               "($help)--selinux-enabled[Enable selinux support]" \
+               "($help)*--storage-opt=[Storage driver options]:storage driver options: " \
+               "($help)--tls[Use TLS]" \
+               "($help)--tlscacert=[Trust certs signed only by this CA]:PEM file:_files -g "*.(pem|crt)"" \
+               "($help)--tlscert=[Path to TLS certificate file]:PEM file:_files -g "*.(pem|crt)"" \
+               "($help)--tlskey=[Path to TLS key file]:Key file:_files -g "*.(pem|key)"" \
+               "($help)--tlsverify[Use TLS and verify the remote]" \
+               "($help)--userns-remap=[User/Group setting for user namespaces]:user\:group:->users-groups" \
+               "($help)--userland-proxy[Use userland proxy for loopback traffic]" && ret=0
+
+    case $state in
+        (cluster-store)
+            if compset -P '*://'; then
+                _message 'host:port' && ret=0
+            else
+                store=('consul' 'etcd' 'zk')
+                _describe -t cluster-store "Cluster Store" store -qS "://" && ret=0
+            fi
+            ;;
+        (cluster-store-options)
+            if compset -P '*='; then
+                _files && ret=0
+            else
+                opts=('discovery.heartbeat' 'discovery.ttl' 'kv.cacertfile' 'kv.certfile' 'kv.keyfile' 'kv.path')
+                _describe -t cluster-store-opts "Cluster Store Options" opts -qS "=" && ret=0
+            fi
+            ;;
+        (users-groups)
+            if compset -P '*:'; then
+                _groups && ret=0
+            else
+                _describe -t userns-default "default Docker user management" '(default)' && ret=0
+                _users && ret=0
+            fi
+            ;;
+    esac
+
+    return ret
+}
+
 __docker_caching_policy() {
   oldp=( "$1"(Nmh+1) )     # 1 hour
   (( $#oldp ))
@@ -629,83 +716,7 @@ __docker_subcommand() {
 
             ;;
         (daemon)
-            _arguments $(__docker_arguments) \
-                $opts_help \
-                "($help)--api-cors-header=[CORS headers in the remote API]:CORS headers: " \
-                "($help)*--authorization-plugin=[Authorization plugins to load]" \
-                "($help -b --bridge)"{-b=,--bridge=}"[Attach containers to a network bridge]:bridge:_net_interfaces" \
-                "($help)--bip=[Network bridge IP]:IP address: " \
-                "($help)--cgroup-parent=[Parent cgroup for all containers]:cgroup: " \
-                "($help -D --debug)"{-D,--debug}"[Enable debug mode]" \
-                "($help)--default-gateway[Container default gateway IPv4 address]:IPv4 address: " \
-                "($help)--default-gateway-v6[Container default gateway IPv6 address]:IPv6 address: " \
-                "($help)--cluster-store=[URL of the distributed storage backend]:Cluster Store:->cluster-store" \
-                "($help)--cluster-advertise=[Address of the daemon instance to advertise]:Instance to advertise (host\:port): " \
-                "($help)*--cluster-store-opt=[Cluster options]:Cluster options:->cluster-store-options" \
-                "($help)*--dns=[DNS server to use]:DNS: " \
-                "($help)*--dns-search=[DNS search domains to use]:DNS search: " \
-                "($help)*--dns-opt=[DNS options to use]:DNS option: " \
-                "($help)*--default-ulimit=[Default ulimit settings for containers]:ulimit: " \
-                "($help)--disable-legacy-registry[Do not contact legacy registries]" \
-                "($help)*--exec-opt=[Exec driver options]:exec driver options: " \
-                "($help)--exec-root=[Root of the Docker execdriver]:path:_directories" \
-                "($help)--fixed-cidr=[IPv4 subnet for fixed IPs]:IPv4 subnet: " \
-                "($help)--fixed-cidr-v6=[IPv6 subnet for fixed IPs]:IPv6 subnet: " \
-                "($help -G --group)"{-G=,--group=}"[Group for the unix socket]:group:_groups" \
-                "($help -g --graph)"{-g=,--graph=}"[Root of the Docker runtime]:path:_directories" \
-                "($help -H --host)"{-H=,--host=}"[tcp://host:port to bind/connect to]:host: " \
-                "($help)--icc[Enable inter-container communication]" \
-                "($help)*--insecure-registry=[Enable insecure registry communication]:registry: " \
-                "($help)--ip=[Default IP when binding container ports]" \
-                "($help)--ip-forward[Enable net.ipv4.ip_forward]" \
-                "($help)--ip-masq[Enable IP masquerading]" \
-                "($help)--iptables[Enable addition of iptables rules]" \
-                "($help)--ipv6[Enable IPv6 networking]" \
-                "($help -l --log-level)"{-l=,--log-level=}"[Logging level]:level:(debug info warn error fatal)" \
-                "($help)*--label=[Key=value labels]:label: " \
-                "($help)--log-driver=[Default driver for container logs]:Logging driver:(json-file syslog journald gelf fluentd awslogs splunk none)" \
-                "($help)*--log-opt=[Log driver specific options]:log driver options:__docker_log_options" \
-                "($help)--mtu=[Network MTU]:mtu:(0 576 1420 1500 9000)" \
-                "($help -p --pidfile)"{-p=,--pidfile=}"[Path to use for daemon PID file]:PID file:_files" \
-                "($help)--raw-logs[Full timestamps without ANSI coloring]" \
-                "($help)*--registry-mirror=[Preferred Docker registry mirror]:registry mirror: " \
-                "($help -s --storage-driver)"{-s=,--storage-driver=}"[Storage driver to use]:driver:(aufs devicemapper btrfs zfs overlay)" \
-                "($help)--selinux-enabled[Enable selinux support]" \
-                "($help)*--storage-opt=[Storage driver options]:storage driver options: " \
-                "($help)--tls[Use TLS]" \
-                "($help)--tlscacert=[Trust certs signed only by this CA]:PEM file:_files -g "*.(pem|crt)"" \
-                "($help)--tlscert=[Path to TLS certificate file]:PEM file:_files -g "*.(pem|crt)"" \
-                "($help)--tlskey=[Path to TLS key file]:Key file:_files -g "*.(pem|key)"" \
-                "($help)--tlsverify[Use TLS and verify the remote]" \
-                "($help)--userns-remap=[User/Group setting for user namespaces]:user\:group:->users-groups" \
-                "($help)--userland-proxy[Use userland proxy for loopback traffic]" && ret=0
-
-            case $state in
-                (cluster-store)
-                    if compset -P '*://'; then
-                        _message 'host:port' && ret=0
-                    else
-                        store=('consul' 'etcd' 'zk')
-                        _describe -t cluster-store "Cluster Store" store -qS "://" && ret=0
-                    fi
-                    ;;
-                (cluster-store-options)
-                    if compset -P '*='; then
-                        _files && ret=0
-                    else
-                        opts=('discovery.heartbeat' 'discovery.ttl' 'kv.cacertfile' 'kv.certfile' 'kv.keyfile' 'kv.path')
-                        _describe -t cluster-store-opts "Cluster Store Options" opts -qS "=" && ret=0
-                    fi
-                    ;;
-                (users-groups)
-                    if compset -P '*:'; then
-                        _groups && ret=0
-                    else
-                        _describe -t userns-default "default Docker user management" '(default)' && ret=0
-                        _users && ret=0
-                    fi
-                    ;;
-            esac
+            __docker_daemon_subcommand && ret=0
             ;;
         (diff)
             _arguments $(__docker_arguments) \
@@ -1076,8 +1087,6 @@ _docker() {
 
     return ret
 }
-
-_docker "$@"
 
 # Local Variables:
 # mode: Shell-Script
